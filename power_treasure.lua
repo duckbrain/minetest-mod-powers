@@ -1,4 +1,4 @@
-minetest_powers.register_power({
+powers.register_power({
 
   name = "treasure",
 
@@ -6,7 +6,7 @@ minetest_powers.register_power({
     minetest.register_on_dignode(function (pos, oldnode, digger)
     	if digger == player and digger:get_inventory() then
     		local _, dropped_item
-    		local r = (minetest_powers.random:next() % 1000)
+    		local r = (powers.random:next() % 1000)
     		if r == 1 then
     			local stack = ItemStack("default:gold_lump 1")
     			digger:get_inventory():add_item("main", stack)
