@@ -2,9 +2,14 @@ powers = {
 	random = PseudoRandom(minetest.get_us_time()),
 
 	register_power = function(power)
-		power.players = {}
+		power.states = {}
 		table.insert(powers, power)
 		powers[power.name] = power
+	end,
+
+	get_powers = function(player)
+		local setting_name = "powers_player_" .. player:get_player_name()
+		return minetest.setting_get(setting_name)
 	end,
 
 	assign_power = function(player, power_names)
@@ -15,8 +20,11 @@ powers = {
 		end
 
 		local setting_name = "powers_player_" .. player:get_player_name()
+		local old_power_names = minetest.setting_get(setting_name, power_names)
 		minetest.setting_set(setting_name, power_names)
 		minetest.setting_save()
+
+		if old_power_names then powers.take(player, old_power_names) end
 
 		powers.give(player, power_names)
 	end,
@@ -28,8 +36,9 @@ powers = {
 				print("Power '" .. i .. "' does not exist")
 			else
 				print('Granting player ' .. player:get_player_name() .. ' the power ' .. i)
-				table.insert(power.players, player)
-				if power.on_gain then power.on_gain(player) end
+				local state = {player = player}
+				table.insert(power.states, state)
+				if power.on_gain then power.on_gain(player, state) end
 			end
 		end
 	end,
@@ -41,46 +50,51 @@ powers = {
 				print("Power '" .. power_name .. "' does not exist")
 			else
 				print('Player ' .. player:get_player_name() .. ' looses the power ' .. power_name)
-				for i=1,table.getn(power.players),1 do
-					if power.players[i] == player then
-						table.remove(power.players, i)
+				for i=1,table.getn(power.states),1 do
+					if power.states[i].player == player then
+						local state = table.remove(power.states, i)
+						if power.on_loose then power.on_loose(player, state) end
 					end
 				end
-				if power.on_loose then power.on_loose(player) end
 			end
 		end
 	end,
 }
 
 minetest.register_globalstep(function(dtime)
-	--TODO: step each power for each of their players
 	for power_index=1,table.getn(powers),1 do
 		local power = powers[power_index]
 		if power.on_step then
-			for player_index=1,table.getn(power.players),1 do
-				local player = power.players[player_index]
-				power.on_step(player, true)
+			for player_index=1,table.getn(power.states),1 do
+				local state = power.states[player_index]
+				power.on_step(state.player, state)
 			end
 		end
 	end
 end)
 
 minetest.register_on_joinplayer(function(player)
-	local setting_name = "powers_player_" .. player:get_player_name()
-	local power_names = minetest.setting_get(setting_name)
+	local power_names = powers.get_powers(player)
 	powers.assign_power(player, power_names)
 end)
 
 minetest.register_chatcommand("power", {
 	privs = {
-		-- admin = true
+		server = true
 	},
 	func = function(player_name, power_names)
 		local player = minetest.get_player_by_name(player_name)
 		if player then
+			print(power_names)
+			print(power_names)
+			if power_names == "" then
+				power_names = powers.get_powers(player)
+				return true, "Powers: " .. power_names
+			else
 			-- TODO: Privleges
-			powers.assign_power(player, power_names)
-			return true, "Powers: " .. power_names
+				powers.assign_power(player, power_names)
+				return true, "Powers: " .. power_names
+			end
 		else
 			return false, "Player is not online"
 		end

@@ -62,11 +62,11 @@ minetest.register_node("powers:glow_water", {
 	-- ^ how far
 	post_effect_color = {a=64, r=100, g=100, b=200},
 })
-
+---[[
 minetest.register_abm({
 	nodenames = {"powers:glow_air"},
 	neighbors = {},
-	interval = 1.0, -- Run every 10 seconds
+	interval = 5.0, -- Run every 10 seconds
 	chance = 1, -- Select every 1 in 50 nodes
 	action = function(pos, node, active_object_count, active_object_count_wider)
 		minetest.set_node(pos, {name = "air"})
@@ -81,32 +81,25 @@ minetest.register_abm({
 		minetest.set_node(pos, {name = "default:water_source"})
 	end
 })
+--]]
 
 powers.register_power({
 
   name = "light",
 
-  --[[on_gain = function(player)
+  on_gain = function(player, state)
+		state.button_down = false
+		state.light_on = false
+	end,
 
-				--TODO: Put this in init.lua
+	on_step = function(player, state)
+		local controls = player:get_player_control()
+		if controls.aux1 and not state.button_down then
+			state.light_on = not state.light_on
+		end
+		state.button_down = controls.aux1
 
-				local button_down = false
-				local light_on = false
-
-				local controls = player:get_player_control()
-				if controls.aux1 and not button_down then
-					light_on = not light_on
-				end
-				button_down = controls.aux1
-  end,
-
-
-  on_loose = function(player)
-
-  end,]]
-
-	on_step = function(player, toggle)
-		if toggle then
+		if state.light_on then
 			local pos = player:getpos()
 			pos.y = pos.y + 2
 			pos.y = math.floor(pos.y)
@@ -120,5 +113,4 @@ powers.register_power({
 			end
 		end
 	end,
-
 })
