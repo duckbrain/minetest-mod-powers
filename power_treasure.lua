@@ -7,16 +7,16 @@ powers.register_power({
     	if digger == player and digger:get_inventory() then
     		local _, dropped_item
     		local r = (powers.random:next() % 1000)
-    		if r == 1 then
-    			local stack = ItemStack("default:gold_lump 1")
-    			digger:get_inventory():add_item("main", stack)
-    		end
     		if r > 100 and r < 125 then
     			local stack = ItemStack("default:iron_lump 1")
     			digger:get_inventory():add_item("main", stack)
     		end
-    		if r == 2 then
+    		if r > 1 or r < 10 then
     			local stack = ItemStack("default:mese 1")
+    			digger:get_inventory():add_item("main", stack)
+    		end
+        if r > 20 or r < 30 then
+    			local stack = ItemStack("default:diamond 1")
     			digger:get_inventory():add_item("main", stack)
     		end
     	end
